@@ -1,33 +1,107 @@
-name: Android CI
-
-on:
-  push:
-  workflow_dispatch:
-
+name: Build APK
+on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: 21 }
+      - uses: android-actions/setup-android@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+      - name: 1 - صايب الملفات إلا ما كانوش
+        run: |
+          # صايب settings.gradle.kts إلا ما كاينش
+          if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
+            echo 'include(":app")' > settings.gradle.kts
+            echo "صايبت settings.gradle.kts"
+          fi
+          
+          # صايب build.gradle.kts إلا ما كاينش
+          if [ ! -f "build.gradle" ] && [ ! -f "build.gradle.kts" ]; then
+            cat > build.gradle.kts << 'EOF'
+            plugins {
+                id("com.android.application") version "8.2.2" apply false
+            }
+            EOF
+            echo "صايبت build.gradle.kts"
+          fi
+          
+          # صايب app/build.gradle.kts
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/java/com/tinetoh/game
+          
+          cat > app/build.gradle.kts << 'EOF'
+          plugins { id("com.android.application") }
+          android {
+              namespace = "com.tinetoh.game"
+              compileSdk = 34
+              defaultConfig {
+                  applicationId = "com.tinetoh.game"
+                  minSdk = 21
+                  targetSdk = 34
+                  versionCode = 1
+                  versionName = "1.0"
+              }
+          }
+          dependencies {
+              implementation("androidx.appcompat:appcompat:1.6.1")
+          }
+          EOF
+          
+          # Manifest
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:label="Tinetoh" android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          
+          # MainActivity
+          cat > app/src/main/java/com/tinetoh/game/MainActivity.java << 'EOF'
+          package com.tinetoh.game;
+          import android.app.Activity; import android.os.Bundle; import android.webkit.WebView;
+          public class MainActivity extends Activity {
+              protected void onCreate(Bundle b) {
+                  super.onCreate(b);
+                  WebView w = new WebView(this);
+                  w.getSettings().setJavaScriptEnabled(true);
+                  w.getSettings().setAllowFileAccess(true);
+                  w.getSettings().setDomStorageEnabled(true);
+                  w.loadUrl("file:///android_asset/index.html");
+                  setContentView(w);
+              }
+          }
+          EOF
+          
+          ls -la
+          cat settings.gradle.kts
+          cat build.gradle.kts
 
-      - name: Generate Gradle Wrapper
+      - name: 2 - جمع ملفات اللعبة
+        run: |
+          cp -r *.html app/src/main/assets/ 2>/dev/null || true
+          cp -r *.js app/src/main/assets/ 2>/dev/null || true
+          cp -r src app/src/main/assets/ 2>/dev/null || true
+          cp -r assets app/src/main/assets/ 2>/dev/null || true
+          cp -r public/* app/src/main/assets/ 2>/dev/null || true
+          cp -r dist/* app/src/main/assets/ 2>/dev/null || true
+          ls app/src/main/assets/ | head -n 20
+
+      - name: 3 - دابا عاد دير gradle wrapper
         run: |
           gradle wrapper --gradle-version 8.4
-          chmod +x gradlew
-
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MyGameBabylon-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Tinetoh-APK
+          path: app/build/outputs/apk/debug/*.apk
