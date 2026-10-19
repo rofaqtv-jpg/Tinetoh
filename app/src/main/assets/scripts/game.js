@@ -418,8 +418,12 @@ window.GameRefs = {
     camera,
     car,
     carMesh,
-    carMaterial
+    carMaterial,
+    myId,
+    myName
 };
+
+window.dispatchEvent(new Event("game-ready"));
 
 window.dispatchEvent(new Event("game-ready"));
     let currentVisual = null;
