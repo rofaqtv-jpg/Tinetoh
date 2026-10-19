@@ -38,7 +38,8 @@ class MainActivity : Activity() {
         webView.settings.loadWithOverviewMode = true
 
         webView.webViewClient = WebViewClient()
-
+        webView.settings.allowFileAccessFromFileURLs = true
+     webView.settings.allowUniversalAccessFromFileURLs = true
         wifi = LocalWifi(this, object : LocalWifi.Listener {
 
             override fun onDeviceFound(device: LocalWifi.Device) {
