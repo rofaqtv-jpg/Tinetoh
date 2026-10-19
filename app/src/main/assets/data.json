@@ -1,0 +1,13 @@
+{
+  "game": {
+    "name": "MyGameBabylon",
+    "version": 1
+  },
+  "car": {
+    "defaultColor": "#ff3333",
+    "importSupported": true
+  },
+  "wifi": {
+    "port": 47900
+  }
+}
