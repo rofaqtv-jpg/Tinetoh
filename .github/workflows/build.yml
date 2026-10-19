@@ -6,95 +6,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: 'temurin', java-version: 21 }
+        with:
+          distribution: temurin
+          java-version: 21
       - uses: android-actions/setup-android@v4
 
-      - name: 1 - صايب الملفات إلا ما كانوش
+      - name: Create project with Python
         run: |
-          # صايب settings.gradle.kts إلا ما كاينش
-          if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
-            echo 'include(":app")' > settings.gradle.kts
-            echo "صايبت settings.gradle.kts"
-          fi
-          
-          # صايب build.gradle.kts إلا ما كاينش
-          if [ ! -f "build.gradle" ] && [ ! -f "build.gradle.kts" ]; then
-            cat > build.gradle.kts << 'EOF'
-            plugins {
-                id("com.android.application") version "8.2.2" apply false
-            }
-            
-            echo "صايبت build.gradle.kts"
-          fi
-          
-          # صايب app/build.gradle.kts
-          mkdir -p app/src/main/assets
-          mkdir -p app/src/main/java/com/tinetoh/game
-          
-          cat > app/build.gradle.kts << 'EOF'
-          plugins { id("com.android.application") }
-          android {
-              namespace = "com.tinetoh.game"
-              compileSdk = 34
-              defaultConfig {
-                  applicationId = "com.tinetoh.game"
-                  minSdk = 21
-                  targetSdk = 34
-                  versionCode = 1
-                  versionName = "1.0"
-              }
-          }
-          dependencies {
-              implementation("androidx.appcompat:appcompat:1.6.1")
-          }
-          
-          
-          # Manifest
-          cat > app/src/main/AndroidManifest.xml << 'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:label="Tinetoh" android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
-          
-          # MainActivity
-          cat > app/src/main/java/com/tinetoh/game/MainActivity.java << 'EOF'
-          package com.tinetoh.game;
-          import android.app.Activity; import android.os.Bundle; import android.webkit.WebView;
-          public class MainActivity extends Activity {
-              protected void onCreate(Bundle b) {
-                  super.onCreate(b);
-                  WebView w = new WebView(this);
-                  w.getSettings().setJavaScriptEnabled(true);
-                  w.getSettings().setAllowFileAccess(true);
-                  w.getSettings().setDomStorageEnabled(true);
-                  w.loadUrl("file:///android_asset/index.html");
-                  setContentView(w);
-              }
-          }
-          EOF
-          
+          python3 << 'PY'
+          import os, pathlib
+          pathlib.Path("settings.gradle.kts").write_text('include(":app")\n')
+          pathlib.Path("build.gradle.kts").write_text('plugins { id("com.android.application") version "8.2.2" apply false }\n')
+          os.makedirs("app/src/main/assets", exist_ok=True)
+          os.makedirs("app/src/main/java/com/tinetoh/game", exist_ok=True)
+          pathlib.Path("app/build.gradle.kts").write_text('plugins { id("com.android.application") }\nandroid { namespace = "com.tinetoh.game"\n compileSdk = 34\n defaultConfig { applicationId = "com.tinetoh.game"; minSdk = 21; targetSdk = 34; versionCode = 1; versionName = "1.0" } }\ndependencies { implementation("androidx.appcompat:appcompat:1.6.1") }\n')
+          pathlib.Path("app/src/main/AndroidManifest.xml").write_text('<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="Tinetoh" android:theme="@android:style/Theme.NoTitleBar.Fullscreen"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>')
+          pathlib.Path("app/src/main/java/com/tinetoh/game/MainActivity.java").write_text('package com.tinetoh.game; import android.app.Activity; import android.os.Bundle; import android.webkit.WebView; public class MainActivity extends Activity { protected void onCreate(Bundle b) { super.onCreate(b); WebView w = new WebView(this); w.getSettings().setJavaScriptEnabled(true); w.getSettings().setAllowFileAccess(true); w.getSettings().setDomStorageEnabled(true); w.loadUrl("file:///android_asset/index.html"); setContentView(w); } }')
+          print("Files created")
+          PY
           ls -la
-          cat settings.gradle.kts
-          cat build.gradle.kts
+          ls app/src/main/assets || true
 
-      - name: 2 - جمع ملفات اللعبة
+      - name: Copy game files
         run: |
           cp -r *.html app/src/main/assets/ 2>/dev/null || true
           cp -r *.js app/src/main/assets/ 2>/dev/null || true
           cp -r src app/src/main/assets/ 2>/dev/null || true
           cp -r assets app/src/main/assets/ 2>/dev/null || true
-          cp -r public/* app/src/main/assets/ 2>/dev/null || true
-          cp -r dist/* app/src/main/assets/ 2>/dev/null || true
-          ls app/src/main/assets/ | head -n 20
+          cp -r public app/src/main/assets/ 2>/dev/null || true
+          ls app/src/main/assets | head -n 30
 
-      - name: 3 - دابا عاد دير gradle wrapper
+      - name: Build APK
         run: |
           gradle wrapper --gradle-version 8.4
           chmod +x ./gradlew
