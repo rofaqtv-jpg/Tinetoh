@@ -15,7 +15,6 @@ jobs:
         run: |
           python3 << 'PY'
           import os, pathlib
-          # هادي هي المهمة - خاص google() باش يلقا android plugin
           settings = """
           pluginManagement {
               repositories {
@@ -37,14 +36,35 @@ jobs:
           include(":app")
           """
           pathlib.Path("settings.gradle.kts").write_text(settings)
-          pathlib.Path("build.gradle.kts").write_text('// empty root\n')
-          
+          pathlib.Path("build.gradle.kts").write_text('// root\n')
           os.makedirs("app/src/main/assets", exist_ok=True)
           os.makedirs("app/src/main/java/com/tinetoh/game", exist_ok=True)
-          pathlib.Path("app/build.gradle.kts").write_text('plugins { id("com.android.application") }\nandroid { namespace = "com.tinetoh.game"\n compileSdk = 34\n defaultConfig { applicationId = "com.tinetoh.game"; minSdk = 21; targetSdk = 34; versionCode = 1; versionName = "1.0" } }\ndependencies { implementation("androidx.appcompat:appcompat:1.6.1") }\n')
+          app_gradle = """
+          plugins { id("com.android.application") }
+          android {
+              namespace = "com.tinetoh.game"
+              compileSdk = 34
+              buildToolsVersion = "34.0.0"
+              defaultConfig {
+                  applicationId = "com.tinetoh.game"
+                  minSdk = 21
+                  targetSdk = 34
+                  versionCode = 1
+                  versionName = "1.0"
+              }
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_21
+                  targetCompatibility = JavaVersion.VERSION_21
+              }
+          }
+          dependencies {
+              implementation("androidx.appcompat:appcompat:1.6.1")
+              implementation("androidx.core:core:1.12.0")
+          }
+          """
+          pathlib.Path("app/build.gradle.kts").write_text(app_gradle)
           pathlib.Path("app/src/main/AndroidManifest.xml").write_text('<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="Tinetoh" android:theme="@android:style/Theme.NoTitleBar.Fullscreen"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>')
-          pathlib.Path("app/src/main/java/com/tinetoh/game/MainActivity.java").write_text('package com.tinetoh.game; import android.app.Activity; import android.os.Bundle; import android.webkit.WebView; public class MainActivity extends Activity { protected void onCreate(Bundle b) { super.onCreate(b); WebView w = new WebView(this); w.getSettings().setJavaScriptEnabled(true); w.getSettings().setAllowFileAccess(true); w.getSettings().setDomStorageEnabled(true); w.loadUrl("file:///android_asset/index.html"); setContentView(w); } }')
-          print("OK")
+          pathlib.Path("app/src/main/java/com/tinetoh/game/MainActivity.java").write_text('package com.tinetoh.game; import android.app.Activity; import android.os.Bundle; import android.webkit.WebView; public class MainActivity extends Activity { protected void onCreate(Bundle b) { super.onCreate(b); WebView w = new WebView(this); w.getSettings().setJavaScriptEnabled(true); w.getSettings().setAllowFileAccess(true); w.getSettings().setDomStorageEnabled(true); w.setWebContentsDebuggingEnabled(true); w.loadUrl("file:///android_asset/index.html"); setContentView(w); } }')
           PY
 
       - name: Copy game files
@@ -57,13 +77,14 @@ jobs:
           cp -r dist app/src/main/assets/ 2>/dev/null || true
           ls app/src/main/assets | head -n 20
 
-      - name: Build APK
+      - name: Build APK with logs
         run: |
           gradle wrapper --gradle-version 8.4
           chmod +x ./gradlew
-          ./gradlew assembleDebug
-
+          ./gradlew assembleDebug --stacktrace --info
+          
       - name: Upload APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Tinetoh-APK
