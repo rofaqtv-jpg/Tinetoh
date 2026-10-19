@@ -36,7 +36,11 @@ class MainActivity : Activity() {
         webView.settings.databaseEnabled = true
         webView.settings.useWideViewPort = true
         webView.settings.loadWithOverviewMode = true
+@Suppress("DEPRECATION")
+webView.settings.allowFileAccessFromFileURLs = true
 
+@Suppress("DEPRECATION")
+webView.settings.allowUniversalAccessFromFileURLs = true
         webView.webViewClient = WebViewClient()
         webView.settings.allowFileAccessFromFileURLs = true
      webView.settings.allowUniversalAccessFromFileURLs = true
