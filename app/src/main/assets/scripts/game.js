@@ -512,16 +512,17 @@ window.dispatchEvent(new Event("game-ready"));
             const q = carMesh.rotationQuaternion || BABYLON.Quaternion.Identity();
 
             const state = {
-                t: "state",
-                id: myId,
-                x: carMesh.position.x,
-                y: carMesh.position.y,
-                z: carMesh.position.z,
-                qx: q.x,
-                qy: q.y,
-                qz: q.z,
-                qw: q.w
-            };
+    t: "state",
+    id: myId,
+    name: myName,
+    x: carMesh.position.x,
+    y: carMesh.position.y,
+    z: carMesh.position.z,
+    qx: q.x,
+    qy: q.y,
+    qz: q.z,
+    qw: q.w
+};
 
             if (typeof AndroidBridge !== "undefined" && AndroidBridge.send) {
                 AndroidBridge.send(JSON.stringify(state));
