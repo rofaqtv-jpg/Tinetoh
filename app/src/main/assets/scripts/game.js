@@ -412,7 +412,16 @@ async function createScene() {
     );
 
     const car = new HavokCar(scene, carMesh, carAggregate);
+window.GameRefs = {
+    engine,
+    scene,
+    camera,
+    car,
+    carMesh,
+    carMaterial
+};
 
+window.dispatchEvent(new Event("game-ready"));
     let currentVisual = null;
 
     function disposeCurrentVisual() {
