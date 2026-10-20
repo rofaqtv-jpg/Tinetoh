@@ -977,4 +977,10 @@ function createCarSelector(scene, carMesh, selectBuiltInCar, loadCarFromFile) {
     document.body.appendChild(fileInput);
 }
 
-createScene();
+createScene().catch(function (error) {
+    console.error(error);
+
+    if (window.__showFatal) {
+        window.__showFatal(String(error));
+    }
+});
