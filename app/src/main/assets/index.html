@@ -29,9 +29,81 @@
         }
     </style>
 
+    <script>
+        (function () {
+            function showError(message) {
+                console.error(message);
+
+                var el = document.getElementById("fatal-error");
+
+                if (!el) {
+                    el = document.createElement("div");
+                    el.id = "fatal-error";
+
+                    el.style.position = "absolute";
+                    el.style.top = "10px";
+                    el.style.left = "10px";
+                    el.style.right = "10px";
+                    el.style.zIndex = "9999";
+                    el.style.color = "#ffffff";
+                    el.style.background = "rgba(200,0,0,0.75)";
+                    el.style.padding = "12px";
+                    el.style.borderRadius = "10px";
+                    el.style.fontFamily = "sans-serif";
+                    el.style.fontSize = "14px";
+                    el.style.whiteSpace = "pre-wrap";
+
+                    document.body.appendChild(el);
+                }
+
+                el.textContent = "Error: " + message;
+            }
+
+            window.__showFatal = showError;
+
+            window.addEventListener("error", function (event) {
+                showError(
+                    (event.message || "Unknown error") +
+                    "\nFile: " + (event.filename || "unknown") +
+                    "\nLine: " + (event.lineno || "?")
+                );
+            });
+
+            window.addEventListener("unhandledrejection", function (event) {
+                showError(
+                    event.reason
+                        ? String(event.reason)
+                        : "Promise error"
+                );
+            });
+
+            window.addEventListener("load", function () {
+                setTimeout(function () {
+                    if (typeof BABYLON === "undefined") {
+                        showError(
+                            "BABYLON is not loaded.\n" +
+                            "Check file:\n" +
+                            "app/src/main/assets/libs/babylon.js"
+                        );
+                        return;
+                    }
+
+                    if (typeof HavokPhysics === "undefined") {
+                        showError(
+                            "HavokPhysics is not loaded.\n" +
+                            "Check file:\n" +
+                            "app/src/main/assets/havok/HavokPhysics.js"
+                        );
+                    }
+                }, 1200);
+            });
+        })();
+    </script>
+
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 <script src="https://cdn.babylonjs.com/havok/HavokPhysics.js"></script>
+
 </head>
 
 <body>
@@ -39,5 +111,8 @@
 
     <script src="scripts/game.js"></script>
     <script src="scripts/creative.js"></script>
+    <script src="scripts/multiplayer-pro.js"></script>
 </body>
-      </html>
+</html>
+
+    
